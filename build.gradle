@@ -1,0 +1,16 @@
+import javax.tools.ToolProvider
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'me.dwtj'
+version = '0.1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+  compile (
+    files(((URLClassLoader) ToolProvider.getSystemToolClassLoader()).getURLs()),
+  )
+}
