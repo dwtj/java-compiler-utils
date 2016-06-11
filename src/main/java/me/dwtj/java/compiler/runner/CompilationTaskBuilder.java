@@ -46,24 +46,31 @@ import static javax.tools.ToolProvider.getSystemJavaCompiler;
 
 /**
  * A builder for (un-called) instances of {@link JavaCompiler.CompilationTask} to simplify correct
- * configuration of the {@link JavaCompiler} API.
+ * configuration of the {@link JavaCompiler Java Compiler API}.
  *
- * <p>The builder has methods of the form `set*()`, `add*()`, and `addAll()` in order to configure
- * the compilation task as desired. These methods all return the builder receiver instance on which
- * the method was called (i.e. `this`) to enable method-chaining. Once the appropriate methods are
- * called, then {@link #build()} can be called to obtain the specified compilation task. The
- * compilation task returned from {@link #build()} will not have been called. The {@link #build()}
- * method can only be called once.
+ * <p>All {@link CompilationTask}s created via this API are created using a {@link JavaCompiler}
+ * obtained via {@link ToolProvider#getSystemJavaCompiler()}. The builder has methods of the form
+ * `set*()`, `add*()`, and `addAll*()` to let the client <em>specify</em> a {@link CompilationTask}
+ * which they want to create from such a {@link JavaCompiler} instance.
  *
- * <p>A key part of the configuration of a {@link JavaCompiler} is the configuration of its
- * {@link JavaFileManager}. Any {@link JavaCompiler} which is configured by this API uses a
- * {@link StandardJavaFileManager} provided via its {@link JavaCompiler#getStandardFileManager}
- * method. To configure this file manager, use {@link #setFileManagerConfig}.
+ * <p>Each of these methods returns the builder receiver instance on which the method was called
+ * (i.e. `this`) to facilitate method-chaining.
  *
- * <p>In the case that a some relevant aspect of the compilation task is not explicitly set via the
- * builder, the builder has been designed to use (hopefully) sensible defaults. For example, if
- * a compiler is not explicitly set, then {@link ToolProvider#getSystemJavaCompiler()} is used by
- * default. See the relevant method for information on default behavior.
+ * <p>Once the client has finished specifying the desired compilation task using these methods, then
+ * {@link #build()} can be called to obtain such a compilation task. This compilation task will not
+ * have been called. Note that {@link #build()} can only be called once.
+ *
+ * <p>A key part of the configuration of a {@link JavaCompiler} is the configuration of the
+ * {@link JavaFileManager} to be used in the compilation. Any {@link JavaCompiler} which is created
+ * using this API uses a {@link StandardJavaFileManager} provided via its
+ * {@link JavaCompiler#getStandardFileManager} method. This file manager can be configured by
+ * passing a config {@link #setFileManagerConfig(StandardJavaFileManagerConfig)}.
+ *
+ * <p>In the case that some relevant aspect of the compilation task is not explicitly set via
+ * builder method calls, the builder has been designed to use (hopefully) sensible defaults. (For
+ * example, if {@link #addProc} is never called, then by default no processors will be added to the
+ * compilation task by the builder.) See the relevant method's documentation for information on
+ * default behavior.
  *
  * @author dwtj, jlmaddox
  */
@@ -88,7 +95,7 @@ final public class CompilationTaskBuilder {
     private StandardJavaFileManagerConfig fileManagerConfig = new StandardJavaFileManagerConfig();
 
     /**
-     * Builds and returns a {@link CompilationTask} whose properties conform to prior calls of
+     * Builds and returns a {@link CompilationTask} which is as specified by preceding calls to
      * the builder's methods. This can only be called once. Note that this consumes/re-initializes
      * the currently set file manager config.
      *
@@ -119,12 +126,12 @@ final public class CompilationTaskBuilder {
     }
 
     /**
-     * The given {@link Processor annotation processor} instance will be used during the
-     * compilation task.
+     * The given {@link Processor annotation processor} instance will be used during the compilation
+     * task.
      *
-     * <p><em>Warning:</em> Like the {@link Processor} interface, this interface makes no
-     * guarantees about the number of rounds in which this task will be called, nor does
-     * guarantee the ordering with which the compilation task's processors are called.
+     * <p><em>Warning:</em> Like the {@link Processor} interface, this interface makes no guarantees
+     * about the number of rounds in which this task will be called, nor does guarantee the ordering
+     * with which the compilation task's processors are called.
      *
      * <p>By default, a compilation task has no processors.
      *
@@ -175,14 +182,21 @@ final public class CompilationTaskBuilder {
      * Set the {@link StandardJavaFileManagerConfig} instance to be used to configure the
      * compilation task's file manager.
      *
-     * <p>By default, the compilation task will use a file manager with no locations set.
+     * <p>If this method is never called with a config, then the default behavior is to use a null-
+     * {@link StandardJavaFileManagerConfig}, that is, one which sets each {@link StandardLocation}
+     * to {@code null}.
+     *
+     * <p>The compilation task will obtain and configure a file manager obtained from
+     * {@link JavaCompiler#getStandardFileManager}. Note that depending on the environment,
+     * some default locations may be provided to such a file manager. These defaults may be
+     * overridden according to the semantics of {@link StandardJavaFileManagerConfig#config}.
      *
      * <p>Note that the config is only used <em>at build-time</em>. This means that the config
-     * instance to which the builder has been set may be mutated even after it is set and these
-     * effects will be visible at build time.
+     * instance to which the builder has been set may be mutated even after this method is
+     * called and these mutations will be visible at build time.
      *
-     * <p>Note also that a config is "consumed" by the builder {@link #build()} is called, in
-     * particular, the config will be re-initialized.
+     * <p>Note also that a config is "consumed" by the builder when {@link #build()} is called, or
+     * to be more precise, the config will be re-initialized.
      *
      * @return The receiver instance (i.e. {@code this}).
      */
@@ -192,21 +206,41 @@ final public class CompilationTaskBuilder {
         return this;
     }
 
+    /**
+     * The source of the class indicated by the given fully-qualified class name will be compiled
+     * during the compilation task. This source code for this class will be looked-up using the
+     * compilation task's file manager when {@link #build} is called.
+     *
+     * <p>By default, a compilation task has no compilation units.
+     *
+     * @return The receiver instance (i.e. {@code this}).
+     */
     public CompilationTaskBuilder addClass(String cls) {
         classes.add(cls);
         return this;
     }
 
+    /** A helper method for {@link #addClass(String)} */
     public CompilationTaskBuilder addAllClasses(Iterable<String> cls) {
         cls.forEach(this::addClass);
         return this;
     }
 
+    /**
+     * Adds a single compiler option to be passed to the compilation task. Note that options will
+     * be passed to the compiler in the order that they were passed to this method or
+     * {@link #addAllOptions}.
+     *
+     * <p>By default, a compilation task has no options.
+     *
+     * @return The receiver instance (i.e. {@code this}).
+     */
     public CompilationTaskBuilder addOption(String opt) {
         options.add(opt);
         return this;
     }
 
+    /** A helper method for {@link #addOption(String)} */
     public CompilationTaskBuilder addAllOptions(Iterable<String> opts) {
         opts.forEach(this::addOption);
         return null;
@@ -241,7 +275,7 @@ final public class CompilationTaskBuilder {
     /**
      * The compilation task will be processing-only (i.e. "-proc:only" is added as an option).
      *
-     * By default, this is set to `false` (i.e. both processing and compilation will occur).
+     * By default, this option is not passed, i.e. both processing and compilation will occur.
      *
      * @return The receiver instance (i.e. {@code this}).
      */
@@ -296,6 +330,11 @@ final public class CompilationTaskBuilder {
 
     /**
      * A helper class for configuring the locations of a {@link StandardJavaFileManager} instance.
+     * It is used by calling the various `add*()`, `addAll*()`, and `set*()` methods and then
+     * calling {@link #config(StandardJavaFileManager)} with the file manager to be configured.
+     *
+     * <p>Note that a config can only be used to configure one file manager instance, since
+     * {@link #config} re-initializes the config instance.
      */
     final public static class StandardJavaFileManagerConfig {
 
@@ -317,7 +356,11 @@ final public class CompilationTaskBuilder {
             locations = new EnumMap<>(StandardLocation.class);
         }
 
-        /** Adds the given file to the indicated location type. */
+        /**
+         * Adds the given file to the indicated location type.
+         *
+         * @return The receiver instance (i.e. {@code this}).
+         */
         public StandardJavaFileManagerConfig addTo(StandardLocation location, File file) {
             assert file != null;
             locations.putIfAbsent(location, new ArrayList<>());
@@ -325,7 +368,11 @@ final public class CompilationTaskBuilder {
             return this;
         }
 
-        /** Adds each of the given files for the indicated location type. */
+        /**
+         * Adds each of the given files for the indicated location type.
+         *
+         * @return The receiver instance (i.e. {@code this}).
+         */
         public StandardJavaFileManagerConfig addAllTo(StandardLocation location,
                                                       Iterable<? extends File> files) {
             assert files != null;
@@ -333,7 +380,11 @@ final public class CompilationTaskBuilder {
             return this;
         }
 
-        /** Sets the given file as the only file for the indicated location type. */
+        /**
+         * Sets the given file as the only file for the indicated location type.
+         *
+         * @return The receiver instance (i.e. {@code this}).
+         */
         public StandardJavaFileManagerConfig setAs(StandardLocation location, File file) {
             assert file != null;
             locations.put(location, null);  // Clear old location information.
@@ -346,6 +397,9 @@ final public class CompilationTaskBuilder {
          * current locations, clobbering any previously added or set locations. Subsequent calls
          * to other `add*()` and `set*()` will modify the configuration starting from the last call
          * to this method.
+         *
+         * <p>If this method is never called, then a null {@link StandardJavaFileManagerConfig} will
+         * be used. (See {@link StandardJavaFileManagerConfig#makeNullConfig()}.)
          *
          * <p>Note that this method performs a shallow copy of the given file manager's location
          * information down to the {@link File} instances, that is, the given {@link File}
@@ -453,11 +507,10 @@ final public class CompilationTaskBuilder {
 
 
     /**
-     * A helper method which returns a {@link File} handle to a writable, newly created
-     * temporary directory. This directory will be prefixed by {@code TEMP_DIR_PREFIX}.
-     *
-     * <p>This may be a useful helper for creating temporary directories for outputs generated
-     * by some compilation task.
+     * A helper method which returns a {@link File} handle to a writable, newly created temporary
+     * directory. This directory will be prefixed by {@code TEMP_DIR_PREFIX}.This may be a useful
+     * helper method for creating temporary directories for outputs generated by some compilation
+     * task.
      */
     public static File tempDir() throws IOException {
         return Files.createTempDirectory(TEMP_DIR_PREFIX).toFile();
