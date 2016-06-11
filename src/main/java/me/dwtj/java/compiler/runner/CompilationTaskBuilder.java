@@ -301,11 +301,19 @@ final public class CompilationTaskBuilder {
 
         private EnumMap<StandardLocation, List<File>> locations;
 
-        public StandardJavaFileManagerConfig() {
+        /** Instantiates and returns a new config which will initially set all locations to null. */
+        public static StandardJavaFileManagerConfig makeNullConfig() {
+            return new StandardJavaFileManagerConfig();
+        }
+
+        private StandardJavaFileManagerConfig() {
             reInit();
         }
 
-        private void reInit() {
+        /**
+         * Re-initializes the config as it was when it was made.
+         */
+        public void reInit() {
             locations = new EnumMap<>(StandardLocation.class);
         }
 
