@@ -112,9 +112,9 @@ final public class CompilationTaskBuilder {
             String msg = "`CompilationTaskBuilder.build()` can only be called once.";
             throw new IllegalStateException(msg);
         } else {
-            CompilationTask retVal = _build();
-            _finish();
-            return retVal;
+            CompilationTask task = buildTask();
+            finish();
+            return task;
         }
     }
 
@@ -250,7 +250,7 @@ final public class CompilationTaskBuilder {
         return this;
     }
 
-    private CompilationTask _build() throws IOException {
+    private CompilationTask buildTask() throws IOException {
         // Configure the compiler itself and its file manager.
         JavaCompiler compiler = getSystemJavaCompiler();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -285,7 +285,7 @@ final public class CompilationTaskBuilder {
     }
 
     /** Sets `isBuilt` to true, and sets all fields to `null` for garbage collection. */
-    private void _finish() {
+    private void finish() {
         isBuilt = true;
         processors = null;
         compilationUnits = null;
