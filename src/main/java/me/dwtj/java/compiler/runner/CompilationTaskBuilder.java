@@ -336,7 +336,7 @@ final public class CompilationTaskBuilder {
      * <p>Note that a config can only be used to configure one file manager instance, since
      * {@link #config} re-initializes the config instance.
      */
-    final public static class StandardJavaFileManagerConfig {
+    public static class StandardJavaFileManagerConfig {
 
         private EnumMap<StandardLocation, List<File>> locations;
 
