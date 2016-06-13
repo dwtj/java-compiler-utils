@@ -360,6 +360,7 @@ final public class CompilationTaskBuilder {
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addTo(StandardLocation location, File file) {
+            assert location != null;
             assert file != null;
             locations.putIfAbsent(location, new ArrayList<>());
             locations.get(location).add(file);
@@ -373,6 +374,7 @@ final public class CompilationTaskBuilder {
          */
         public StandardJavaFileManagerConfig addAllTo(StandardLocation location,
                                                       Iterable<? extends File> files) {
+            assert location != null;
             assert files != null;
             files.forEach(f -> addTo(location, f));
             return this;
