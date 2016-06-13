@@ -493,12 +493,21 @@ final public class CompilationTaskBuilder {
 
         /**
          * Configures the given file manager, and re-initializes the config instance.
+         *
+         * @return The now-configured file manager instance which was just passed in.
+         *
+         * @throws IOException
+         *            if the config attempted to set some output location to a path which does not
+         *            represent an existing directory
          */
-        public void config(StandardJavaFileManager fileManager) throws IOException {
+        public StandardJavaFileManager config(StandardJavaFileManager fileManager)
+                                                                throws IOException {
+            assert fileManager != null;
             for (StandardLocation l : StandardLocation.values()) {
                 fileManager.setLocation(l, locations.get(l));
             }
             reInit();
+            return fileManager;
         }
     }
 
