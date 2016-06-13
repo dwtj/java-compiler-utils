@@ -130,8 +130,8 @@ final public class CompilationTaskBuilder {
      * task.
      *
      * <p><em>Warning:</em> Like the {@link Processor} interface, this interface makes no guarantees
-     * about the number of rounds in which this task will be called, nor does guarantee the ordering
-     * with which the compilation task's processors are called.
+     * about the number of rounds in which this task will be called, nor does it guarantee the
+     * ordering with which the compilation task's processors are called.
      *
      * <p>By default, a compilation task has no processors.
      *
@@ -145,9 +145,8 @@ final public class CompilationTaskBuilder {
 
     /**
      * A new {@link UniversalProcessor} instance with the given task will added to the compilation
-     * task.
-     *
-     * <p>By default, a compilation task has no processors.
+     * task. This is just a helper for calling {@link #addProc(Processor)}, so see that method for
+     * details.
      *
      * @return The receiver instance (i.e. {@code this}).
      *
@@ -162,9 +161,8 @@ final public class CompilationTaskBuilder {
 
     /**
      * A new {@link CompilationUnitsProcessor} with the given task will be used during the
-     * compilation task.
-     *
-     * <p>By default, a compilation task has no processors.
+     * compilation task. This is just a helper for calling {@link #addProc(Processor)}, so see that
+     * method for details.
      *
      * @return The receiver instance (i.e. {@code this}).
      *
