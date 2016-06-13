@@ -338,9 +338,52 @@ final public class CompilationTaskBuilder {
 
         private EnumMap<StandardLocation, List<File>> locations;
 
-        /** Instantiates and returns a new config which will initially set all locations to null. */
-        public static StandardJavaFileManagerConfig makeNullConfig() {
+        /**
+         * Instantiates and returns a new config which will initially have all standard locations
+         * set to null.
+         */
+        public static StandardJavaFileManagerConfig makeConfig() {
             return new StandardJavaFileManagerConfig();
+        }
+
+        /**
+         * Instantiates and returns a new config which will initially have all standard locations
+         * set as in the given file manager.
+         *
+         * <p>Note that this method performs a shallow copy of the given file manager's location
+         * information down to the {@link File} instances, that is, the given {@link File}
+         * instances will be stored here, but the data structures holding them will not be.
+         */
+        public static StandardJavaFileManagerConfig makeConfig(StandardJavaFileManager from) {
+            assert from != null;
+            StandardJavaFileManagerConfig to = makeConfig();
+            for (StandardLocation l : StandardLocation.values()) {
+                Iterable<? extends File> files = from.getLocation(l);
+                if (files != null) {
+                    to.addAllTo(l, files);
+                }
+            }
+            return to;
+        }
+
+        /**
+         * Instantiates and returns a new config which will initially have all standard locations
+         * set as in the given file manager.
+         *
+         * <p>Note that this method performs a shallow copy of the given file manager's location
+         * information down to the {@link File} instances, that is, the given {@link File}
+         * instances will be stored here, but the data structures holding them will not be.
+         */
+        public static StandardJavaFileManagerConfig makeConfig(StandardJavaFileManagerConfig from) {
+            assert from != null;
+            StandardJavaFileManagerConfig to = makeConfig();
+            for (StandardLocation l : StandardLocation.values()) {
+                Iterable<? extends File> files = from.locations.get(l);
+                if (files != null) {
+                    to.addAllTo(l, files);
+                }
+            }
+            return to;
         }
 
         private StandardJavaFileManagerConfig() {
@@ -383,36 +426,16 @@ final public class CompilationTaskBuilder {
         /**
          * Sets the given file as the only file for the indicated location type.
          *
+         * Note that unlike the various <code>add*()</code> and <code>addAll*()</code> methods, this
+         * method <em>does</em> allow a <code>null</code> value to be passed-in.
+         *
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig setAs(StandardLocation location, File file) {
-            assert file != null;
-            locations.put(location, null);  // Clear old location information.
-            addTo(location, file);
-            return this;
-        }
-
-        /**
-         * Sets all {@link StandardLocation}s like the given {@link StandardJavaFileManager}'s
-         * current locations, clobbering any previously added or set locations. Subsequent calls
-         * to other `add*()` and `set*()` will modify the configuration starting from the last call
-         * to this method.
-         *
-         * <p>If this method is never called, then a null {@link StandardJavaFileManagerConfig} will
-         * be used. (See {@link StandardJavaFileManagerConfig#makeNullConfig()}.)
-         *
-         * <p>Note that this method performs a shallow copy of the given file manager's location
-         * information down to the {@link File} instances, that is, the given {@link File}
-         * instances will be store here, but the data structures holding them will not be.
-         */
-        public StandardJavaFileManagerConfig setLocationsLike(StandardJavaFileManager from) {
-            assert from != null;
-            reInit();
-            for (StandardLocation l : StandardLocation.values()) {
-                Iterable<? extends File> files = from.getLocation(l);
-                if (files != null) {
-                    addAllTo(l, files);
-                }
+            assert location != null;
+            locations.put(location, null);  // Always clear old location information.
+            if (file != null) {
+                addTo(location, file);
             }
             return this;
         }
