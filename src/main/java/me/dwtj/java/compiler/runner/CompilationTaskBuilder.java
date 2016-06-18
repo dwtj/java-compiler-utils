@@ -98,7 +98,9 @@ final public class CompilationTaskBuilder {
     /**
      * Builds and returns a {@link CompilationTask} which is as specified by preceding calls to
      * the builder's methods. This can only be called once. Note that this consumes/re-initializes
-     * the currently set file manager config.
+     * the currently-set file manager config.
+     *
+     * @return A {@link CompilationTask} as specified by preceeding calls to the builder's methods.
      *
      * @throws IllegalStateException
      *            If this method has been called before.
@@ -136,6 +138,7 @@ final public class CompilationTaskBuilder {
      *
      * <p>By default, a compilation task has no processors.
      *
+     * @param  proc The annotation processor instance to be added to the compile task.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder addProc(Processor proc) {
@@ -149,6 +152,8 @@ final public class CompilationTaskBuilder {
      * task. This is just a helper for calling {@link #addProc(Processor)}, so see that method for
      * details.
      *
+     * @param  task A task to be performed in each round of annotation processing; in each round
+     *              this task will be invoked with the current processing and round environments.
      * @return The receiver instance (i.e. {@code this}).
      *
      * @see CompilationTaskBuilder#addProc(Processor)
@@ -165,6 +170,8 @@ final public class CompilationTaskBuilder {
      * compilation task. This is just a helper for calling {@link #addProc(Processor)}, so see that
      * method for details.
      *
+     * @param  task A task to be performed one at a time on each compilation unit tree found during
+     *              annotation processing.
      * @return The receiver instance (i.e. {@code this}).
      *
      * @see CompilationTaskBuilder#addProc(Processor)
@@ -197,6 +204,7 @@ final public class CompilationTaskBuilder {
      * <p>Note also that a config is "consumed" by the builder when {@link #build()} is called, or
      * to be more precise, the config will be re-initialized.
      *
+     * @param  config The config to be used by this builder when {@link #build()} is called.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder setFileManagerConfig(StandardJavaFileManagerConfig config) {
@@ -212,6 +220,7 @@ final public class CompilationTaskBuilder {
      *
      * <p>By default, a compilation task has no compilation units.
      *
+     * @param  cls The fully qualified name to be found and added as a compilation unit.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder addClass(String cls) {
@@ -219,9 +228,14 @@ final public class CompilationTaskBuilder {
         return this;
     }
 
-    /** A helper method for {@link #addClass(String)} */
-    public CompilationTaskBuilder addAllClasses(Iterable<String> cls) {
-        cls.forEach(this::addClass);
+    /**
+     * A helper method for {@link #addClass(String)}
+     *
+     * @param  classes The fully qualified names to be found and added as compilation units.
+     * @return The receiver instance (i.e. {@code this}).
+     */
+    public CompilationTaskBuilder addAllClasses(Iterable<String> classes) {
+        classes.forEach(this::addClass);
         return this;
     }
 
@@ -232,6 +246,7 @@ final public class CompilationTaskBuilder {
      *
      * <p>By default, a compilation task has no options.
      *
+     * @param  opt The option to be added/appended.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder addOption(String opt) {
@@ -239,7 +254,12 @@ final public class CompilationTaskBuilder {
         return this;
     }
 
-    /** A helper method for {@link #addOption(String)} */
+    /**
+     * A helper method for {@link #addOption(String)}
+     *
+     * @param  opts The sequence of options to be added/appended.
+     * @return The receiver instance (i.e. {@code this}).
+     */
     public CompilationTaskBuilder addAllOptions(Iterable<String> opts) {
         opts.forEach(this::addOption);
         return null;
@@ -250,6 +270,7 @@ final public class CompilationTaskBuilder {
      *
      * <p>By default, a compilation task has no compilation units.
      *
+     * @param  unit The compilation unit to be added.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder addCompilationUnit(JavaFileObject unit) {
@@ -263,6 +284,7 @@ final public class CompilationTaskBuilder {
      *
      * <p>By default, a compilation task has no compilation units.
      *
+     * @param  units The compilation units to be added.
      * @return The receiver instance (i.e. {@code this}).
      */
     public CompilationTaskBuilder addAllCompilationUnits(Iterable<JavaFileObject> units) {
@@ -342,6 +364,8 @@ final public class CompilationTaskBuilder {
         /**
          * Instantiates and returns a new config which will initially have all standard locations
          * set to null.
+         *
+         * @return The new null config.
          */
         public static StandardJavaFileManagerConfig makeConfig() {
             return new StandardJavaFileManagerConfig();
@@ -354,6 +378,9 @@ final public class CompilationTaskBuilder {
          * <p>Note that this method performs a shallow copy of the given file manager's location
          * information down to the {@link File} instances, that is, the given {@link File}
          * instances will be stored here, but the data structures holding them will not be.
+         *
+         * @param from An existing file manager from which to copy location information.
+         * @return A newly instantiated with copied location information.
          */
         public static StandardJavaFileManagerConfig makeConfig(StandardJavaFileManager from) {
             assert from != null;
@@ -374,6 +401,9 @@ final public class CompilationTaskBuilder {
          * <p>Note that this method performs a shallow copy of the given file manager's location
          * information down to the {@link File} instances, that is, the given {@link File}
          * instances will be stored here, but the data structures holding them will not be.
+         *
+         * @param  from An existing config from which to copy location information.
+         * @return A newly instantiated with copied location information.
          */
         public static StandardJavaFileManagerConfig makeConfig(StandardJavaFileManagerConfig from) {
             assert from != null;
@@ -401,6 +431,8 @@ final public class CompilationTaskBuilder {
         /**
          * Adds the given file to the indicated location type.
          *
+         * @param  location An enum value identifying a location (e.g. {@code CLASS_PATH}).
+         * @param  file     The file/directory to be added to the location.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addTo(StandardLocation location, File file) {
@@ -414,6 +446,8 @@ final public class CompilationTaskBuilder {
         /**
          * Adds each of the given files for the indicated location type.
          *
+         * @param  location An enum value identifying a location (e.g. {@code CLASS_PATH}).
+         * @param  files    The files/directories to be added to the location.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addAllTo(StandardLocation location,
@@ -430,6 +464,8 @@ final public class CompilationTaskBuilder {
          * Note that unlike the various <code>add*()</code> and <code>addAll*()</code> methods, this
          * method <em>does</em> allow a <code>null</code> value to be passed-in.
          *
+         * @param  location An enum value identifying a location (e.g. {@code CLASS_PATH}).
+         * @param  file     The file/directory to which the indicated location will be set.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig setAs(StandardLocation location, File file) {
@@ -446,6 +482,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, there are no directories (explicitly) on the class path.
          *
+         * @param  f The file/directory to be added to the class path.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addToClassPath(File f) {
@@ -459,6 +496,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, there are no directories (explicitly) on the class path.
          *
+         * @param  fs The files/directories to be added to the class path.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addAllToClassPath(Iterable<File> fs) {
@@ -471,6 +509,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, there are no directories (explicitly) on the source path.
          *
+         * @param  f The file/directory to be added to the source path.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addToSourcePath(File f) {
@@ -484,6 +523,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, there are no directories (explicitly) on the source path.
          *
+         * @param  fs The files/directories to be added to the source path.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig addAllToSourcePath(Iterable<File> fs) {
@@ -496,6 +536,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, newly created class files will be written to a temporary directory.
          *
+         * @param  dir The directory into which any classes generated by compilation will be placed.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig setClassOutputDir(File dir) {
@@ -508,6 +549,7 @@ final public class CompilationTaskBuilder {
          *
          * <p>By default, newly created source files will be written to a temporary directory.
          *
+         * @param  dir The directory into which any sources generated by compilation will be placed.
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig setSourceOutputDir(File dir) {
@@ -516,8 +558,9 @@ final public class CompilationTaskBuilder {
         }
 
         /**
-         * Configures the given file manager, and re-initializes the config instance.
+         * Configures the given file manager, and then re-initializes the config instance.
          *
+         * @param  fileManager The standard file manager instance to-be-configured.
          * @return The now-configured file manager instance which was just passed in.
          *
          * @throws IOException
@@ -544,6 +587,10 @@ final public class CompilationTaskBuilder {
      * directory. This directory will be prefixed by {@code TEMP_DIR_PREFIX}.This may be a useful
      * helper method for creating temporary directories for outputs generated by some compilation
      * task.
+     *
+     * @return A handle to the newly-created temporary directory.
+     *
+     * @throws IOException If an I/O error occurs or the temporary-file directory does not exist.
      */
     public static File tempDir() throws IOException {
         return Files.createTempDirectory(TEMP_DIR_PREFIX).toFile();
