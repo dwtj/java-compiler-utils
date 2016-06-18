@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static javax.tools.StandardLocation.CLASS_PATH;
+import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static javax.tools.StandardLocation.SOURCE_PATH;
 import static javax.tools.ToolProvider.getSystemJavaCompiler;
 
@@ -510,7 +511,7 @@ final public class CompilationTaskBuilder {
          * @return The receiver instance (i.e. {@code this}).
          */
         public StandardJavaFileManagerConfig setSourceOutputDir(File dir) {
-            setAs(CLASS_OUTPUT, dir);
+            setAs(SOURCE_OUTPUT, dir);
             return this;
         }
 
