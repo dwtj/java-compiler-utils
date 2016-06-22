@@ -2,6 +2,7 @@ import javax.tools.ToolProvider
 
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 group = 'me.dwtj'
 version = '0.1.2-SNAPSHOT'
@@ -28,3 +29,101 @@ task sourcesJar(type: Jar) {
 artifacts {
   archives javadocJar, sourcesJar
 }
+
+signing {
+  sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+
+      beforeDeployment {
+        MavenDeployment deployment -> signing.signPom(deployment)
+      }
+
+      pom.project {
+        artifactId 'java-compiler-utils'
+	name 'java-compiler-utils'
+        description 'Utilities to help use some Java compilation APIs.'
+        packaging 'jar'
+        url 'https://github.com/dwtj/java-compiler-utils'
+        scm {
+	  url 'https://github.com/dwtj/java-compiler-utils.git'
+	}
+
+        licenses {
+          license {
+            name 'The Apache License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+
+        developers {
+          developer {
+            id 'dwtj'
+            name 'David Johnston'
+            email 'dwtj@dwtj.me'
+          }
+        }
+      }
+    }
+  }
+}
+
+// Add extra configuration to `uploadArchives` which refers to creds.
+tasks.uploadArchives.doFirst {
+  def URL = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+  def SNAPSHOT_URL = "https://oss.sonatype.org/content/repositories/snapshots/"
+
+  uploadArchives.repositories.mavenDeployer {
+    repository(url: URL) {
+      authentication(
+        userName: project.uploadingUsername,
+        password: project.uploadingPassword
+      )
+    }
+    snapshotRepository(url: SNAPSHOT_URL) {
+      authentication(
+        userName: project.uploadingUsername,
+        password: project.uploadingPassword
+      )
+    }
+  }
+}
+
+/*
+ * HOWTO: To enable archive signing and deployment, set the property
+ * `me.dwtj.java-compiler-utils.credsDir` to some path containing two files,
+ * `signing.gradle` and `deploying.gradle`. These scripts will be run before
+ * signing and deploying tasks; they need to add number of properties to the
+ * project which give some required credentials information.
+ *
+ * This `signing.gradle` script should use `ext` to set:
+ *
+ *  - signing.keyId
+ *  - signing.password
+ *  - signing.secretKeyRingFile
+ *
+ * (Note that these are the standard properties expected by the `signing`
+ * plugin.)
+ *
+ * The `uploading.gradle` script is similar; it should use `ext` to set:
+ *
+ *  - uploadingUsername
+ *  - uploadingPassword
+ */
+def credsDirKey = 'me.dwtj.java-compiler-utils.credsDir'
+
+task signingCreds << {
+  assert project.hasProperty(credsDirKey)
+  apply from: "${project.property(credsDirKey)}/signing.gradle"
+}
+task uploadingCreds << {
+  assert project.hasProperty(credsDirKey)
+  apply from: "${project.property(credsDirKey)}/uploading.gradle"
+}
+
+tasks.signArchives.dependsOn(tasks.signingCreds)
+tasks.uploadArchives.dependsOn(tasks.signingCreds)
+tasks.uploadArchives.dependsOn(tasks.uploadingCreds)
