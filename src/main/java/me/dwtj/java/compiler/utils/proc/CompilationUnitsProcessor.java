@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.dwtj.java.compiler.proc;
+package me.dwtj.java.compiler.utils.proc;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.Trees;

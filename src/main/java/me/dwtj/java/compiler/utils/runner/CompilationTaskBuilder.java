@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.dwtj.java.compiler.runner;
+package me.dwtj.java.compiler.utils.runner;
 
 import com.sun.source.tree.CompilationUnitTree;
-import me.dwtj.java.compiler.proc.CompilationUnitsProcessor;
-import me.dwtj.java.compiler.proc.UniversalProcessor;
+import me.dwtj.java.compiler.utils.proc.CompilationUnitsProcessor;
+import me.dwtj.java.compiler.utils.proc.UniversalProcessor;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
