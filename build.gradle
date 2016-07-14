@@ -1,6 +1,7 @@
 import javax.tools.ToolProvider
 
 plugins {
+  id 'net.ltgt.apt' version '0.6'
   id 'java'
   id 'com.bmuschko.nexus' version '2.3.1'
 }
@@ -17,9 +18,14 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-  compile (
-    files(((URLClassLoader) ToolProvider.getSystemToolClassLoader()).getURLs()),
-  )
+  compile files(((URLClassLoader) ToolProvider.getSystemToolClassLoader()).getURLs())
+  compile 'javax.inject:javax.inject:1'
+  compile 'com.google.dagger:dagger:2.5'
+  apt 'com.google.dagger:dagger-compiler:2.5'
+}
+
+repositories {
+  mavenCentral()
 }
 
 modifyPom {
