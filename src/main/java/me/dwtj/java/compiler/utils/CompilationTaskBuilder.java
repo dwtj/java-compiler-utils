@@ -380,7 +380,7 @@ final public class CompilationTaskBuilder {
      */
     public CompilationTaskBuilder addAllOptions(Iterable<String> opts) {
         opts.forEach(this::addOption);
-        return null;
+        return this;
     }
 
     /**
@@ -697,7 +697,7 @@ final public class CompilationTaskBuilder {
     }
 
 
-    public static final String TEMP_DIR_PREFIX = "java-compiler-runner-";
+    public static final String TEMP_DIR_PREFIX = "java-compiler-utils-";
 
 
     /**
