@@ -21,6 +21,7 @@ dependencies {
   compile files(((URLClassLoader) ToolProvider.getSystemToolClassLoader()).getURLs())
   compile 'javax.inject:javax.inject:1'
   compile 'com.google.dagger:dagger:2.5'
+  compile 'org.apache.commons:commons-configuration2:2.1'
   apt 'com.google.dagger:dagger-compiler:2.5'
 }
 

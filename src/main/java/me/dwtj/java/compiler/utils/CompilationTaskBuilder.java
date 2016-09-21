@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.dwtj.java.compiler.utils.runner;
+package me.dwtj.java.compiler.utils;
 
 import com.sun.source.tree.CompilationUnitTree;
 import me.dwtj.java.compiler.utils.proc.CompilationUnitsProcessor;
 import me.dwtj.java.compiler.utils.proc.UniversalProcessor;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.convert.ListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -38,12 +45,15 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static javax.tools.StandardLocation.CLASS_PATH;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static javax.tools.StandardLocation.SOURCE_PATH;
 import static javax.tools.ToolProvider.getSystemJavaCompiler;
+import static me.dwtj.java.compiler.utils.CompilationTaskBuilder.StandardJavaFileManagerConfig.makeConfig;
 
 /**
  * A builder for (un-called) instances of {@link JavaCompiler.CompilationTask} to simplify correct
@@ -85,6 +95,106 @@ final public class CompilationTaskBuilder {
 
     public static CompilationTaskBuilder newBuilder() {
         return new CompilationTaskBuilder();
+    }
+
+    /**
+     * Instantiates a new builder using information in the given {@link Configuration Apache
+     * Commons Configuration}. The returned builder is initialized by inspecting this configuration
+     * for known properties. The values of these known properties are passed to the builder. These
+     * known properties are:
+     *
+     * <ul>
+     *   <li><code>src</code> - A list of fully-qualified class names of the source files to be
+     *       compiled. These source files will be discovered somewhere on the source path. For
+     *       example, if <code>pkg.subpkg.MyCls</code> is in this list, then the source path will be
+     *       searched for the file <code>pkg/subpkg/MyCls.java</code>.</li>
+     *   <li>
+     *     <code>source_path</code> - A list of file paths to be searched for client source files.
+     *   </li>
+     *   <li>
+     *     <code>class_path</code> - A list of file paths to be searched for pre-compiled class
+     *     files.</li>
+     *   <li>
+     *     <code>source_output</code>: A file path where generated source files will be placed.
+     *   </li>
+     *   <li>
+     *     <code>class_output</code>: A file path where generated class files will be placed.
+     *   </li>
+     *   <li>
+     *     <code>options</code> - A list of compiler options.
+     *   </li>
+     * </ul>
+     *
+     * Any properties in the given configuration which are not in this list are simply ignored.
+     *
+     * @param config The configuration to be used in initializing the builder.
+     *
+     * @return A newly instantiated and appropriately initialized builder.
+     */
+    public static CompilationTaskBuilder newBuilder(Configuration config) {
+        final StandardJavaFileManagerConfig fileManager = makeConfig();
+        fileManager.addAllToClassPath(config.getList(String.class, "class_path", emptyList())
+                                            .stream()
+                                            .map(File::new)
+                                            .collect(toList()))
+                   .addAllToSourcePath(config.getList(String.class, "source_path", emptyList())
+                                             .stream()
+                                             .map(File::new)
+                                             .collect(toList()))
+                   .setSourceOutputDir(newFileOrNullPassthrough(config.getString("source_output")))
+                   .setClassOutputDir(newFileOrNullPassthrough(config.getString("class_output")));
+
+        return newBuilder().setFileManagerConfig(fileManager)
+                           .addAllClasses(config.getList(String.class, "src", emptyList()))
+                           .addAllOptions(config.getList(String.class, "options", emptyList()));
+    }
+
+    /**
+     * A helper method to create a configuration from the given Apache Commons Configuration
+     * Properties file. List items are separated by commas.
+     *
+     * @param configFile A valid Apache Commons Configuration Properties file.
+     *
+     * @return A {@link Configuration} corresponding to the given file.
+     *
+     * @see <a href=http://commons.apache.org/proper/commons-configuration/>
+     *        Apache Commons Configuration
+     *      </a>
+     * @see <a href=http://commons.apache.org/proper/commons-configuration/userguide/howto_properties.html>
+     *        Apache Commons Configuration: Properties Files
+     *      </a>
+     */
+    public static PropertiesConfiguration compileProperties(File configFile) {
+        Parameters paramUtils = new Parameters();
+        ListDelimiterHandler delim = new DefaultListDelimiterHandler(',');
+        try {
+            return new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                    .configure(paramUtils.properties().setListDelimiterHandler(delim)
+                                                      .setFile(configFile))
+                    .getConfiguration();
+        } catch (ConfigurationException ex) {
+            throw new RuntimeException("Failed to create a configuration from file " + configFile);
+        }
+    }
+
+    /**
+     * Instantiates a new builder using information in the given compilation configuration file.
+     * The given file is interpreted as an Apache Commons Configuration properties file.
+     *
+     * See {@link #newBuilder(Configuration)} for the set of known properties and their
+     * interpretations.
+     *
+     * This method uses the {@link #compileProperties} method to interpret the given file as a
+     * configuration. See that method for more information on the file format.
+     *
+     * @param configFile A {@link File} pointing to a compile properties file.
+     *
+     * @return A newly instantiated and appropriately initialized builder.
+     *
+
+     */
+    public static CompilationTaskBuilder newBuilder(File configFile) {
+        return newBuilder(compileProperties(configFile));
     }
 
     private boolean isBuilt = false;
@@ -211,6 +321,14 @@ final public class CompilationTaskBuilder {
         assert config != null;
         fileManagerConfig = config;
         return this;
+    }
+
+    /**
+     * @return The currently-set config instance.
+     */
+    public StandardJavaFileManagerConfig getFileManagerConfig() {
+        assert fileManagerConfig != null;
+        return fileManagerConfig;
     }
 
     /**
@@ -594,5 +712,9 @@ final public class CompilationTaskBuilder {
      */
     public static File tempDir() throws IOException {
         return Files.createTempDirectory(TEMP_DIR_PREFIX).toFile();
+    }
+
+    private static File newFileOrNullPassthrough(String s) {
+        return (s == null) ? null : new File(s);
     }
 }
