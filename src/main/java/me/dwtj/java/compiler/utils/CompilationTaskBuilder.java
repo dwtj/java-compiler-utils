@@ -151,7 +151,7 @@ final public class CompilationTaskBuilder {
 
     /**
      * A helper method to create a configuration from the given Apache Commons Configuration
-     * Properties file. List items are separated by commas.
+     * Properties file.
      *
      * @param configFile A valid Apache Commons Configuration Properties file.
      *
@@ -169,8 +169,7 @@ final public class CompilationTaskBuilder {
         ListDelimiterHandler delim = new DefaultListDelimiterHandler(',');
         try {
             return new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
-                    .configure(paramUtils.properties().setListDelimiterHandler(delim)
-                                                      .setFile(configFile))
+                    .configure(paramUtils.properties().setFile(configFile))
                     .getConfiguration();
         } catch (ConfigurationException ex) {
             throw new RuntimeException("Failed to create a configuration from file " + configFile);
