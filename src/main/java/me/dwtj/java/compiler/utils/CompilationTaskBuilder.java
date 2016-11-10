@@ -29,6 +29,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
@@ -86,7 +87,6 @@ import static me.dwtj.java.compiler.utils.CompilationTaskBuilder.StandardJavaFil
  * @author dwtj, jlmaddox
  */
 // TODO: Let a single builder create multiple `CompilationTask` instances.
-// TODO: Use diagnostics listener.
 // TODO: Support passing in names of classes to `compiler.getTask()`.
 // TODO: Consider allowing dependency injection in the form of a JavaCompiler
 final public class CompilationTaskBuilder {
@@ -202,6 +202,7 @@ final public class CompilationTaskBuilder {
     private List<JavaFileObject> compilationUnits = new ArrayList<>();
     private List<String> options = new ArrayList<>();
     private List<String> classes = new ArrayList<>();
+    private DiagnosticListener<? super JavaFileObject> diagnostic = null;
     private StandardJavaFileManagerConfig fileManagerConfig = new StandardJavaFileManagerConfig();
 
     /**
@@ -422,10 +423,27 @@ final public class CompilationTaskBuilder {
         return this;
     }
 
+    /**
+     * The compilation task and its file manager will use the given diagnostic listener to report
+     * their notes, warnings, errors, etc.
+     *
+     * @param diagnostic
+     *          The diagnostic listener instance to be passed to the compilation task and its file
+     *          manager when {@link #build()} is called.
+     *
+     * @return The receiver instance (i.e. {@code} this).
+     */
+    public CompilationTaskBuilder setDiagnosticListener(DiagnosticListener<? super JavaFileObject>
+                                                                                       diagnostic) {
+        this.diagnostic = diagnostic;
+        return this;
+    }
+
     private CompilationTask buildTask() throws IOException {
         // Configure the compiler itself and its file manager.
         JavaCompiler compiler = getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostic,
+                                                                              null, null);
         fileManagerConfig.config(fileManager);
 
         // Use the file manager and the class list to get the compilation units to be compiled.
@@ -446,7 +464,7 @@ final public class CompilationTaskBuilder {
         CompilationTask task = compiler.getTask(
                 null,             // TODO: Support user-defined writer.
                 fileManager,
-                null,             // TODO: Support user-defined diagnostics listeners.
+                diagnostic,
                 options,          // TODO: Support more user-defined options.
                 null,             // TODO: Support user-defined classes.
                 compilationUnits
@@ -462,6 +480,7 @@ final public class CompilationTaskBuilder {
         processors = null;
         compilationUnits = null;
         options = null;
+        diagnostic = null;
         fileManagerConfig = null;
     }
 
